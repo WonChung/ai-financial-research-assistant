@@ -333,6 +333,13 @@ function App() {
     setRiskMessage("Generating portfolio risk summary...");
     setRiskSummary(null);
 
+    const apiHoldings = payloadHoldings.map((holding) => ({
+      ticker: holding.ticker,
+      name: holding.name,
+      sector: holding.sector,
+      weight_percent: holding.weight_percent,
+    }));
+
     try {
       const response = await fetch(`${apiBaseUrl}/portfolio/risk-summary`, {
         method: "POST",
@@ -340,7 +347,7 @@ function App() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          holdings: payloadHoldings.map(({ weightInput, ...holding }) => holding),
+          holdings: apiHoldings,
         }),
       });
 

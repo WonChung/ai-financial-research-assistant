@@ -2,6 +2,8 @@
 
 A full-stack financial research assistant built with React, TypeScript, and FastAPI. It supports document upload, document-scoped RAG question answering with citations, and portfolio concentration-risk summaries from manually entered holdings.
 
+The current RAG implementation is local and deterministic: it uses text chunking, hash-based embeddings, local retrieval, and a simple source-cited answer generator. It does not call OpenAI APIs or any LLM yet.
+
 ## Why I Built It
 
 Financial research workflows often require jumping between filings, notes, portfolio spreadsheets, and ad hoc summaries. I built this project to show how a practical AI research tool can combine document-grounded answers, source citations, and simple portfolio risk analysis in one clean interface.
@@ -109,6 +111,8 @@ OPENAI_API_KEY=
 DATABASE_URL=
 ```
 
+These are placeholders for future integrations. The current app runs without OpenAI API calls.
+
 Frontend `.env`:
 
 ```bash
@@ -178,6 +182,7 @@ Frontend build:
 
 ```bash
 cd frontend
+npm run lint
 npm run build
 ```
 
