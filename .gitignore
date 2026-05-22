@@ -238,6 +238,8 @@ vite.svg
 # Local uploaded documents
 backend/data/documents/*
 !backend/data/documents/.gitkeep
+backend/data/chunks/*
+!backend/data/chunks/.gitkeep
 
 # Marimo
 marimo/_static/

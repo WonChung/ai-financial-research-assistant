@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -6,8 +7,11 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from app.rag.chunker import chunk_text
+
 
 DOCUMENTS_DIR = Path(__file__).resolve().parents[1] / "data" / "documents"
+CHUNKS_DIR = Path(__file__).resolve().parents[1] / "data" / "chunks"
 
 
 class DocumentUploadResponse(BaseModel):
@@ -15,6 +19,8 @@ class DocumentUploadResponse(BaseModel):
     filename: str
     character_count: int
     created_at: str
+    chunk_count: int
+
 
 app = FastAPI(title="AI Financial Research Assistant API")
 
@@ -60,9 +66,15 @@ async def upload_document(
     document_path = DOCUMENTS_DIR / f"{document_id}.txt"
     document_path.write_text(text, encoding="utf-8")
 
+    chunks = [{"document_id": document_id, **chunk} for chunk in chunk_text(text)]
+    CHUNKS_DIR.mkdir(parents=True, exist_ok=True)
+    chunk_path = CHUNKS_DIR / f"{document_id}.json"
+    chunk_path.write_text(json.dumps(chunks, indent=2), encoding="utf-8")
+
     return DocumentUploadResponse(
         document_id=document_id,
         filename=filename,
         character_count=len(text),
         created_at=created_at,
+        chunk_count=len(chunks),
     )

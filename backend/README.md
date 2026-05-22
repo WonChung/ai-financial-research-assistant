@@ -51,6 +51,7 @@ curl -F "file=@example.txt" http://127.0.0.1:8000/documents/upload
 ```
 
 Uploaded document text is stored locally under `backend/data/documents/`.
+Chunk metadata is stored locally under `backend/data/chunks/`.
 
 ## Test
 

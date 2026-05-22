@@ -8,6 +8,7 @@ type UploadedDocument = {
   filename: string;
   character_count: number;
   created_at: string;
+  chunk_count: number;
 };
 
 const apiBaseUrl =
@@ -151,6 +152,10 @@ function App() {
               <div>
                 <dt>Characters</dt>
                 <dd>{uploadedDocument.character_count}</dd>
+              </div>
+              <div>
+                <dt>Chunks</dt>
+                <dd>{uploadedDocument.chunk_count}</dd>
               </div>
               <div>
                 <dt>Created</dt>
