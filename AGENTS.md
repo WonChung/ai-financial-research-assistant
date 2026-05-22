@@ -5,8 +5,9 @@ This is an AI financial research assistant.
 Stack:
 - Backend: Python FastAPI
 - Frontend: React + TypeScript
-- AI: OpenAI API, RAG, document ingestion, source-cited answers
+- RAG: local deterministic pipeline with document ingestion, hash-based embeddings, document-scoped retrieval, and source-cited answer generation
 - Database: start simple with local storage or SQLite; later move to Postgres/pgvector
+- Future upgrade: OpenAI API or another LLM/embedding provider may be added later, but the current app does not call OpenAI APIs or an LLM.
 
 Rules:
 - Make small, reviewable changes.
