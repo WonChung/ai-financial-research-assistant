@@ -74,8 +74,18 @@ class RagService:
         self.retriever = retriever
         self.answer_generator = answer_generator
 
-    def answer(self, question: str, top_k: int = 5) -> GeneratedAnswer:
-        results = self.retriever.retrieve(question, top_k=top_k)
+    def answer(
+        self,
+        *,
+        document_id: str,
+        question: str,
+        top_k: int = 5,
+    ) -> GeneratedAnswer:
+        results = self.retriever.retrieve(
+            document_id=document_id,
+            query=question,
+            top_k=top_k,
+        )
         return self.answer_generator.generate(question, results)
 
 

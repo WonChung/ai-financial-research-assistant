@@ -6,6 +6,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from app.portfolio import Holding, summarize_portfolio_risk
 from app.rag.document_loader import DocumentValidationError
 from app.rag.pipeline import build_local_ingestion_service, build_local_rag_service
 
@@ -24,6 +25,7 @@ class DocumentUploadResponse(BaseModel):
 
 
 class AskRequest(BaseModel):
+    document_id: str
     question: str
     top_k: int = 5
 
@@ -40,6 +42,33 @@ class CitationResponse(BaseModel):
 class AskResponse(BaseModel):
     answer: str
     citations: list[CitationResponse]
+
+
+class PortfolioHoldingRequest(BaseModel):
+    ticker: str
+    name: str
+    sector: str | None = None
+    weight_percent: float
+
+
+class PortfolioRiskSummaryRequest(BaseModel):
+    holdings: list[PortfolioHoldingRequest]
+
+
+class LargestPositionResponse(BaseModel):
+    ticker: str
+    name: str
+    sector: str | None
+    weight_percent: float
+
+
+class PortfolioRiskSummaryResponse(BaseModel):
+    concentration_risk_notes: list[str]
+    largest_positions: list[LargestPositionResponse]
+    sector_concentration_notes: list[str]
+    missing_data_warnings: list[str]
+    risk_explanation: str
+    disclaimer: str
 
 
 app = FastAPI(title="AI Financial Research Assistant API")
@@ -100,11 +129,21 @@ async def upload_document(
 
 @app.post("/research/ask")
 def ask_question(request: AskRequest) -> AskResponse:
+    if not request.document_id.strip():
+        raise HTTPException(status_code=400, detail="document_id is required.")
+
+    if not request.question.strip():
+        raise HTTPException(status_code=400, detail="question is required.")
+
     if request.top_k <= 0:
         raise HTTPException(status_code=400, detail="top_k must be greater than 0.")
 
     rag_service = build_local_rag_service(VECTOR_STORE_PATH)
-    generated_answer = rag_service.answer(request.question, top_k=request.top_k)
+    generated_answer = rag_service.answer(
+        document_id=request.document_id,
+        question=request.question,
+        top_k=request.top_k,
+    )
 
     return AskResponse(
         answer=generated_answer.answer,
@@ -119,4 +158,63 @@ def ask_question(request: AskRequest) -> AskResponse:
             )
             for citation in generated_answer.citations
         ],
+    )
+
+
+@app.post("/portfolio/risk-summary")
+def portfolio_risk_summary(
+    request: PortfolioRiskSummaryRequest,
+) -> PortfolioRiskSummaryResponse:
+    if not request.holdings:
+        raise HTTPException(status_code=400, detail="At least one holding is required.")
+
+    holdings: list[Holding] = []
+    for index, holding in enumerate(request.holdings, start=1):
+        ticker = holding.ticker.strip().upper()
+        name = holding.name.strip()
+        sector = holding.sector.strip() if holding.sector else None
+
+        if not ticker:
+            raise HTTPException(
+                status_code=400,
+                detail=f"holding {index} ticker is required.",
+            )
+
+        if not name:
+            raise HTTPException(
+                status_code=400,
+                detail=f"holding {index} name is required.",
+            )
+
+        if holding.weight_percent <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"holding {index} weight_percent must be greater than 0.",
+            )
+
+        holdings.append(
+            Holding(
+                ticker=ticker,
+                name=name,
+                sector=sector,
+                weight_percent=holding.weight_percent,
+            )
+        )
+
+    summary = summarize_portfolio_risk(holdings)
+    return PortfolioRiskSummaryResponse(
+        concentration_risk_notes=summary.concentration_risk_notes,
+        largest_positions=[
+            LargestPositionResponse(
+                ticker=position.ticker,
+                name=position.name,
+                sector=position.sector,
+                weight_percent=position.weight_percent,
+            )
+            for position in summary.largest_positions
+        ],
+        sector_concentration_notes=summary.sector_concentration_notes,
+        missing_data_warnings=summary.missing_data_warnings,
+        risk_explanation=summary.risk_explanation,
+        disclaimer=summary.disclaimer,
     )

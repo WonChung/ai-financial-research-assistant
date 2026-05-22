@@ -9,11 +9,18 @@ class SourceCitedAnswerGenerator:
                 citations=[],
             )
 
-        cited_lines = []
         citations: list[SourceCitation] = []
+        context_points: list[str] = []
+        seen_contexts: set[str] = set()
 
-        for source_id, result in enumerate(results, start=1):
+        for result in results:
             chunk = result.chunk
+            excerpt = " ".join(chunk.text.split())
+            normalized_excerpt = excerpt.casefold()
+            if normalized_excerpt in seen_contexts:
+                continue
+
+            source_id = len(citations) + 1
             citations.append(
                 SourceCitation(
                     source_id=source_id,
@@ -24,11 +31,8 @@ class SourceCitedAnswerGenerator:
                     end_char=chunk.end_char,
                 )
             )
-            excerpt = " ".join(chunk.text.split())
-            cited_lines.append(f"[{source_id}] {excerpt}")
+            seen_contexts.add(normalized_excerpt)
+            context_points.append(f"{excerpt} [{source_id}]")
 
-        answer = (
-            f"Based on the retrieved document context for: {question}\n\n"
-            + "\n\n".join(cited_lines)
-        )
+        answer = " ".join(context_points)
         return GeneratedAnswer(answer=answer, citations=citations)

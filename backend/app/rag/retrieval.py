@@ -13,6 +13,16 @@ class Retriever:
         self.embedding_provider = embedding_provider
         self.vector_store = vector_store
 
-    def retrieve(self, query: str, top_k: int = 5) -> list[SearchResult]:
+    def retrieve(
+        self,
+        *,
+        document_id: str,
+        query: str,
+        top_k: int = 5,
+    ) -> list[SearchResult]:
         query_embedding = self.embedding_provider.embed_query(query)
-        return self.vector_store.search(query_embedding, top_k=top_k)
+        return self.vector_store.search(
+            query_embedding,
+            document_id=document_id,
+            top_k=top_k,
+        )

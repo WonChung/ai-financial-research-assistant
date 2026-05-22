@@ -45,8 +45,43 @@ def test_rag_service_generates_answer_with_citations(tmp_path: Path) -> None:
     )
 
     rag_service = build_local_rag_service(vector_store_path)
-    generated_answer = rag_service.answer("What happened to services revenue?", top_k=1)
+    generated_answer = rag_service.answer(
+        document_id="doc-1",
+        question="What happened to services revenue?",
+        top_k=1,
+    )
 
     assert "Services revenue increased." in generated_answer.answer
     assert len(generated_answer.citations) == 1
     assert generated_answer.citations[0].filename == "filing.txt"
+
+
+def test_rag_service_scopes_retrieval_to_document_id(tmp_path: Path) -> None:
+    vector_store_path = tmp_path / "vectors.json"
+    ingestion_service = build_local_ingestion_service(
+        documents_dir=tmp_path / "documents",
+        chunks_dir=tmp_path / "chunks",
+        vector_store_path=vector_store_path,
+    )
+    ingestion_service.ingest_txt(
+        document_id="doc-1",
+        filename="example.txt",
+        contents=b"Revenue increased because services grew.",
+        created_at="2026-05-22T00:00:00+00:00",
+    )
+    ingestion_service.ingest_txt(
+        document_id="doc-2",
+        filename="example.txt",
+        contents=b"Revenue increased because services grew.",
+        created_at="2026-05-22T00:00:00+00:00",
+    )
+
+    rag_service = build_local_rag_service(vector_store_path)
+    generated_answer = rag_service.answer(
+        document_id="doc-2",
+        question="Why did revenue increase?",
+        top_k=5,
+    )
+
+    assert generated_answer.answer.count("Revenue increased because services grew.") == 1
+    assert [citation.document_id for citation in generated_answer.citations] == ["doc-2"]

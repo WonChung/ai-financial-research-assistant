@@ -28,7 +28,11 @@ def test_ask_question_returns_source_citations(
 
     response = client.post(
         "/research/ask",
-        json={"question": "Why did revenue increase?", "top_k": 1},
+        json={
+            "document_id": upload_response.json()["document_id"],
+            "question": "Why did revenue increase?",
+            "top_k": 1,
+        },
     )
 
     assert response.status_code == 200
@@ -51,8 +55,76 @@ def test_ask_question_rejects_invalid_top_k() -> None:
 
     response = client.post(
         "/research/ask",
-        json={"question": "What changed?", "top_k": 0},
+        json={"document_id": "doc-1", "question": "What changed?", "top_k": 0},
     )
 
     assert response.status_code == 400
     assert response.json() == {"detail": "top_k must be greater than 0."}
+
+
+def test_ask_question_is_scoped_to_selected_document(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(main, "DOCUMENTS_DIR", tmp_path / "documents")
+    monkeypatch.setattr(main, "CHUNKS_DIR", tmp_path / "chunks")
+    monkeypatch.setattr(main, "VECTOR_STORE_PATH", tmp_path / "vectors.json")
+    client = TestClient(main.app)
+
+    first_upload = client.post(
+        "/documents/upload",
+        files={
+            "file": (
+                "example.txt",
+                b"Revenue increased because services grew.",
+                "text/plain",
+            )
+        },
+    )
+    second_upload = client.post(
+        "/documents/upload",
+        files={
+            "file": (
+                "example.txt",
+                b"Revenue increased because services grew.",
+                "text/plain",
+            )
+        },
+    )
+    assert first_upload.status_code == 200
+    assert second_upload.status_code == 200
+    selected_document_id = second_upload.json()["document_id"]
+
+    response = client.post(
+        "/research/ask",
+        json={
+            "document_id": selected_document_id,
+            "question": "Why did revenue increase?",
+            "top_k": 5,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["answer"].count("Revenue increased because services grew.") == 1
+    assert data["citations"] == [
+        {
+            "source_id": 1,
+            "document_id": selected_document_id,
+            "filename": "example.txt",
+            "chunk_index": 0,
+            "start_char": 0,
+            "end_char": 40,
+        }
+    ]
+
+
+def test_ask_question_requires_document_id() -> None:
+    client = TestClient(main.app)
+
+    response = client.post(
+        "/research/ask",
+        json={"question": "What changed?"},
+    )
+
+    assert response.status_code == 422

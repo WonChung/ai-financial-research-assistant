@@ -41,9 +41,14 @@ button:disabled {
   opacity: 0.7;
 }
 
-input {
+input,
+textarea {
   color: inherit;
   font: inherit;
+}
+
+textarea {
+  resize: vertical;
 }
 
 .page {
@@ -85,7 +90,9 @@ h1 {
 }
 
 .health-panel,
-.upload-panel {
+.upload-panel,
+.ask-panel,
+.portfolio-panel {
   align-items: center;
   background: #ffffff;
   border: 1px solid #d9dee8;
@@ -100,6 +107,12 @@ h1 {
 }
 
 .upload-panel {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.ask-panel,
+.portfolio-panel {
   align-items: stretch;
   flex-direction: column;
 }
@@ -125,26 +138,109 @@ h2 {
   font-weight: 700;
 }
 
+.status-answered {
+  color: #17634f;
+  font-weight: 700;
+}
+
+.status-summarized {
+  color: #17634f;
+  font-weight: 700;
+}
+
 .status-error {
   color: #a33a2b;
   font-weight: 700;
 }
 
-.file-input {
+.file-input,
+.question-input {
   display: grid;
   gap: 8px;
 }
 
-.file-input span {
+.file-input span,
+.question-input span {
   color: #344054;
   font-size: 0.92rem;
   font-weight: 700;
 }
 
-.file-input input {
+.file-input input,
+.question-input textarea {
   border: 1px solid #cbd3df;
   border-radius: 6px;
   padding: 12px;
+}
+
+.question-input textarea:focus {
+  border-color: #1b4d3e;
+  outline: 3px solid rgb(27 77 62 / 14%);
+}
+
+.secondary-button {
+  background: #eef2f6;
+  color: #172033;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: #dfe6ef;
+}
+
+.holdings-table {
+  display: grid;
+  gap: 10px;
+}
+
+.holdings-header,
+.holding-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 0.8fr 1.4fr 1.1fr 0.7fr auto;
+}
+
+.holdings-header {
+  color: #607089;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.holding-row {
+  align-items: end;
+}
+
+.holding-row label {
+  display: grid;
+  gap: 6px;
+}
+
+.holding-row label span {
+  color: #607089;
+  display: none;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.holding-row input {
+  border: 1px solid #cbd3df;
+  border-radius: 6px;
+  min-width: 0;
+  padding: 12px;
+  width: 100%;
+}
+
+.holding-row input:focus {
+  border-color: #1b4d3e;
+  outline: 3px solid rgb(27 77 62 / 14%);
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
 }
 
 .metadata {
@@ -173,6 +269,96 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.answer-panel {
+  border-top: 1px solid #e5e9f0;
+  display: grid;
+  gap: 22px;
+  padding-top: 18px;
+}
+
+.answer-text {
+  color: #172033;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.citations {
+  display: grid;
+  gap: 12px;
+  list-style-position: inside;
+  margin: 0;
+  padding: 0;
+}
+
+.citations li {
+  background: #f7f8fa;
+  border: 1px solid #e5e9f0;
+  border-radius: 6px;
+  color: #536175;
+  display: grid;
+  gap: 4px;
+  line-height: 1.45;
+  padding: 14px;
+}
+
+.citation-title {
+  color: #172033;
+  font-weight: 800;
+}
+
+.citation-document {
+  overflow-wrap: anywhere;
+}
+
+.empty-state {
+  color: #536175;
+  margin: 0;
+}
+
+.risk-summary-card {
+  border-top: 1px solid #e5e9f0;
+  display: grid;
+  gap: 22px;
+  padding-top: 18px;
+}
+
+.risk-summary-card p {
+  color: #344054;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.summary-grid > div {
+  background: #f7f8fa;
+  border: 1px solid #e5e9f0;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.summary-grid ul,
+.summary-grid ol {
+  color: #344054;
+  display: grid;
+  gap: 8px;
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.disclaimer {
+  border-top: 1px solid #e5e9f0;
+  color: #607089;
+  font-size: 0.92rem;
+  padding-top: 16px;
+}
+
 @media (max-width: 640px) {
   .page {
     align-items: flex-start;
@@ -180,8 +366,37 @@ h2 {
   }
 
   .health-panel,
-  .upload-panel {
+  .upload-panel,
+  .ask-panel,
+  .portfolio-panel {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .holdings-header {
+    display: none;
+  }
+
+  .holding-row {
+    border: 1px solid #e5e9f0;
+    border-radius: 6px;
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .holding-row label span {
+    display: inline;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
   }
 }

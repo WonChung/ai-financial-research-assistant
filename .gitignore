@@ -240,6 +240,7 @@ backend/data/documents/*
 !backend/data/documents/.gitkeep
 backend/data/chunks/*
 !backend/data/chunks/.gitkeep
+backend/data/vectors.json
 
 # Marimo
 marimo/_static/
@@ -248,3 +249,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Reference Files
+reference/
+.ipynb_checkpoints/
