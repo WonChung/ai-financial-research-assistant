@@ -1,5 +1,7 @@
 from typing import TypedDict
 
+from app.rag.models import DocumentChunk, LoadedDocument
+
 
 class TextChunk(TypedDict):
     chunk_index: int
@@ -49,3 +51,21 @@ def chunk_text(
         chunk_index += 1
 
     return chunks
+
+
+def chunk_document(
+    document: LoadedDocument,
+    chunk_size: int = 1000,
+    overlap: int = 150,
+) -> list[DocumentChunk]:
+    return [
+        DocumentChunk(
+            document_id=document.document_id,
+            chunk_index=chunk["chunk_index"],
+            text=chunk["text"],
+            start_char=chunk["start_char"],
+            end_char=chunk["end_char"],
+            filename=document.filename,
+        )
+        for chunk in chunk_text(document.text, chunk_size=chunk_size, overlap=overlap)
+    ]

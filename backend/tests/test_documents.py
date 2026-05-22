@@ -9,8 +9,10 @@ from app import main
 def test_upload_txt_document_stores_file(tmp_path: Path, monkeypatch) -> None:
     documents_dir = tmp_path / "documents"
     chunks_dir = tmp_path / "chunks"
+    vector_store_path = tmp_path / "vectors.json"
     monkeypatch.setattr(main, "DOCUMENTS_DIR", documents_dir)
     monkeypatch.setattr(main, "CHUNKS_DIR", chunks_dir)
+    monkeypatch.setattr(main, "VECTOR_STORE_PATH", vector_store_path)
     client = TestClient(main.app)
 
     response = client.post(
@@ -38,15 +40,19 @@ def test_upload_txt_document_stores_file(tmp_path: Path, monkeypatch) -> None:
             "text": "Revenue increased year over year.",
             "start_char": 0,
             "end_char": 33,
+            "filename": "filing.txt",
         }
     ]
+    assert vector_store_path.exists()
 
 
 def test_upload_rejects_non_txt_file(tmp_path: Path, monkeypatch) -> None:
     documents_dir = tmp_path / "documents"
     chunks_dir = tmp_path / "chunks"
+    vector_store_path = tmp_path / "vectors.json"
     monkeypatch.setattr(main, "DOCUMENTS_DIR", documents_dir)
     monkeypatch.setattr(main, "CHUNKS_DIR", chunks_dir)
+    monkeypatch.setattr(main, "VECTOR_STORE_PATH", vector_store_path)
     client = TestClient(main.app)
 
     response = client.post(
@@ -58,13 +64,16 @@ def test_upload_rejects_non_txt_file(tmp_path: Path, monkeypatch) -> None:
     assert response.json() == {"detail": "Only .txt files are supported."}
     assert not documents_dir.exists()
     assert not chunks_dir.exists()
+    assert not vector_store_path.exists()
 
 
 def test_upload_rejects_invalid_utf8_txt(tmp_path: Path, monkeypatch) -> None:
     documents_dir = tmp_path / "documents"
     chunks_dir = tmp_path / "chunks"
+    vector_store_path = tmp_path / "vectors.json"
     monkeypatch.setattr(main, "DOCUMENTS_DIR", documents_dir)
     monkeypatch.setattr(main, "CHUNKS_DIR", chunks_dir)
+    monkeypatch.setattr(main, "VECTOR_STORE_PATH", vector_store_path)
     client = TestClient(main.app)
 
     response = client.post(
@@ -76,3 +85,4 @@ def test_upload_rejects_invalid_utf8_txt(tmp_path: Path, monkeypatch) -> None:
     assert response.json() == {"detail": "Uploaded .txt files must be UTF-8 encoded."}
     assert not documents_dir.exists()
     assert not chunks_dir.exists()
+    assert not vector_store_path.exists()
