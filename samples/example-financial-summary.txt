@@ -1,0 +1,13 @@
+Example Financial Summary
+
+This is a fictional financial summary created for testing the AI Financial Research Assistant. It does not describe a real company and should not be used for investment decisions.
+
+Northstar Retail Group reported revenue of $842 million for fiscal year 2025, up 9% from the prior year. Management attributed the increase to higher online sales, improved store traffic, and expanded loyalty program participation.
+
+Gross margin improved from 38.2% to 40.1% as freight costs normalized and promotional discounts declined. Operating expenses increased 6% due to technology investments, new fulfillment staff, and higher marketing spend.
+
+Operating income was $96 million, compared with $78 million in the prior year. Net income was $61 million, or $2.14 per diluted share. Free cash flow was $74 million after capital expenditures of $28 million.
+
+The company ended the year with $210 million in cash and $145 million of long-term debt. Management stated that liquidity remains adequate for planned store remodels and software upgrades.
+
+Key risks include consumer spending pressure, higher wage costs, inventory forecasting errors, and increased competition from discount retailers. Management expects revenue growth to moderate next year but plans to continue investing in digital channels and supply chain efficiency.

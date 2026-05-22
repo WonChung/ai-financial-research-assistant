@@ -159,7 +159,7 @@ curl -X POST http://127.0.0.1:8000/portfolio/risk-summary \
 1. Start the backend and frontend.
 2. Open `http://localhost:5173`.
 3. Check backend health.
-4. Upload a `.txt` document.
+4. Upload the sample document: [samples/example-financial-summary.txt](samples/example-financial-summary.txt).
 5. Ask a question about the uploaded document.
 6. Review the answer and citations.
 7. Load the sample portfolio or enter holdings manually.

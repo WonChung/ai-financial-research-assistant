@@ -78,6 +78,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+.ipynb_checkpoints/
 
 # IPython
 profile_default/
@@ -218,6 +219,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
 pnpm-debug.log*
 .npm/
 .pnpm-store/
