@@ -235,6 +235,10 @@ coverage/
 *.tsbuildinfo
 vite.svg
 
+# Local uploaded documents
+backend/data/documents/*
+!backend/data/documents/.gitkeep
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

@@ -33,6 +33,10 @@ npm run dev
 
 Open the Vite URL shown in your terminal, usually `http://127.0.0.1:5173`.
 
+The frontend includes a backend health check and a `.txt` document upload form.
+Upload and metadata display are available, but AI/RAG workflows are not
+implemented yet.
+
 ## Checks
 
 ```bash
