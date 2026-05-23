@@ -68,6 +68,38 @@ React holdings form
 
 More detail: [docs/architecture.md](docs/architecture.md)
 
+## Prerequisites
+
+- Python 3.11+
+- Node.js 20+
+- npm
+
+## Quick Start
+
+Start the backend:
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+.venv/bin/uvicorn app.main:app --reload
+```
+
+In a separate terminal, start the frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend runs at the URL printed by Vite, usually:
+
+```text
+http://localhost:5173
+```
+
 ## Local Setup
 
 ### Backend
@@ -96,7 +128,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Frontend runs at the Vite URL shown in the terminal. Locally, use:
+The frontend runs at the URL printed by Vite, usually:
 
 ```text
 http://localhost:5173
@@ -202,4 +234,4 @@ This project is for research and education only. It is not financial advice and 
 
 ## Resume Bullet
 
-Built a full-stack AI financial research assistant with React, TypeScript, FastAPI, and a local RAG pipeline, featuring document ingestion, document-scoped retrieval, source-cited Q&A, portfolio concentration-risk summaries, and backend test coverage.
+Built a full-stack financial research assistant using React, TypeScript, FastAPI, and a local RAG pipeline to upload research documents, answer document-scoped questions with source citations, and generate portfolio concentration-risk summaries with backend test coverage.

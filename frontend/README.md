@@ -41,7 +41,7 @@ cd frontend
 npm run dev
 ```
 
-Open the Vite URL shown in your terminal. Locally, `http://localhost:5173` is the recommended URL.
+The frontend runs at the URL printed by Vite, usually `http://localhost:5173`.
 
 ## Usage Flow
 
