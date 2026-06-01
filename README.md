@@ -341,4 +341,8 @@ This project is for research and education only. It is not financial advice and 
 
 ## Resume Bullet
 
-Built a full-stack financial research assistant using React, TypeScript, FastAPI, and a local RAG pipeline to upload research documents, answer document-scoped questions with source citations, and generate portfolio concentration-risk summaries with backend test coverage.
+Built a full-stack AI financial research assistant using React, TypeScript, FastAPI, and a local RAG pipeline to upload research documents, answer document-scoped questions with source citations, and generate portfolio concentration-risk summaries.
+
+Added a deterministic RAG evaluation harness with golden-question test cases, retrieval validation, answer-grounding checks, citation coverage checks, pass/fail metrics, latency measurements, and structured evaluation reports to detect regressions in source-grounded answer behavior.
+
+Implemented typed FastAPI request/response models, backend validation, and automated tests for document ingestion, retrieval, source citation behavior, portfolio risk summaries, and evaluation workflows.
