@@ -1,6 +1,6 @@
 # AI Financial Research Assistant
 
-A full-stack financial research assistant built with React, TypeScript, and FastAPI. It supports document upload, document-scoped RAG question answering with citations, and portfolio concentration-risk summaries from manually entered holdings.
+A full-stack financial research assistant built with React, TypeScript, and FastAPI. It supports document upload, document-scoped RAG question answering with citations, a local RAG evaluation harness, and portfolio concentration-risk summaries from manually entered holdings.
 
 The current RAG implementation is local and deterministic: it uses text chunking, hash-based embeddings, local retrieval, and a simple source-cited answer generator. It does not call OpenAI APIs or any LLM yet.
 
@@ -17,6 +17,7 @@ The goal is a portfolio-ready full-stack app: useful product behavior, clear arc
 - Ask questions against the currently uploaded document.
 - Return concise answers with source citations and character ranges.
 - Scope retrieval by `document_id` to avoid duplicate answers from repeated uploads.
+- Run golden-question RAG evaluation cases with phrase checks, citation coverage, latency, and pass/fail metrics.
 - Enter holdings manually or load a sample portfolio.
 - Generate concentration-risk notes, largest positions, sector-risk notes, and missing-data warnings.
 - Include a clear research/education disclaimer.
@@ -54,6 +55,16 @@ React UI
   -> JSON vector store
   -> document-scoped retrieval
   -> source-cited answer
+```
+
+RAG evaluation uses the same local retrieval and answer path, then applies deterministic checks:
+
+```text
+React evaluation form
+  -> FastAPI /research/evaluate
+  -> RagService answer generation
+  -> evaluation checks and latency metrics
+  -> structured evaluation report
 ```
 
 Portfolio risk summary is a separate rule-based flow:
@@ -160,6 +171,7 @@ Do not commit `.env` files or real API keys. See [docs/security.md](docs/securit
 | `GET` | `/health` | Backend health check |
 | `POST` | `/documents/upload` | Upload a UTF-8 `.txt` document |
 | `POST` | `/research/ask` | Ask a document-scoped RAG question |
+| `POST` | `/research/evaluate` | Run golden-question RAG evaluation cases |
 | `POST` | `/portfolio/risk-summary` | Generate a portfolio risk summary |
 
 Example RAG request:
@@ -190,6 +202,90 @@ curl -X POST http://127.0.0.1:8000/portfolio/risk-summary \
   }'
 ```
 
+Example RAG evaluation request:
+
+```bash
+curl -X POST http://127.0.0.1:8000/research/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "document_id": "uuid-from-upload",
+    "top_k": 5,
+    "cases": [
+      {
+        "question": "Why did revenue increase?",
+        "expected_answer_phrases": ["online sales", "store traffic"],
+        "expected_citation_phrases": ["Management attributed the increase"]
+      }
+    ]
+  }'
+```
+
+Example RAG evaluation response:
+
+```json
+{
+  "document_id": "uuid-from-upload",
+  "total_cases": 1,
+  "passed_cases": 1,
+  "failed_cases": 0,
+  "pass_rate": 1.0,
+  "results": [
+    {
+      "question": "Why did revenue increase?",
+      "answer": "Northstar Retail Group reported revenue... [1]",
+      "passed": true,
+      "latency_ms": 2.4,
+      "citation_count": 1,
+      "checks": [
+        {
+          "name": "retrieval_has_citations",
+          "passed": true,
+          "detail": null
+        },
+        {
+          "name": "expected_answer_phrases",
+          "passed": true,
+          "detail": null
+        },
+        {
+          "name": "expected_citation_phrases",
+          "passed": true,
+          "detail": null
+        },
+        {
+          "name": "answer_citation_markers",
+          "passed": true,
+          "detail": null
+        }
+      ],
+      "citations": [
+        {
+          "source_id": 1,
+          "document_id": "uuid-from-upload",
+          "filename": "example-financial-summary.txt",
+          "chunk_index": 0,
+          "start_char": 0,
+          "end_char": 1000
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Evaluation Harness
+
+The RAG evaluation harness is a deterministic local workflow inspired by NVIDIA NeMo Evaluator-style role stories for validating source-grounded RAG behavior. It does not call NVIDIA services, OpenAI APIs, or an LLM judge.
+
+Each evaluation case defines a golden question plus:
+
+- `expected_answer_phrases`: phrases that should appear in the generated answer.
+- `expected_citation_phrases`: phrases that should appear in the retrieved cited context.
+
+For each case, the harness records answer grounding checks, citation coverage, citation count, latency in milliseconds, pass/fail checks, failure details, and a structured report. This makes it useful for regression testing whether local retrieval and citation behavior still match known expectations after code changes.
+
+More detail: [docs/evaluation.md](docs/evaluation.md)
+
 ## Example Workflow
 
 1. Start the backend and frontend.
@@ -198,8 +294,10 @@ curl -X POST http://127.0.0.1:8000/portfolio/risk-summary \
 4. Upload the sample document: [samples/example-financial-summary.txt](samples/example-financial-summary.txt).
 5. Ask a question about the uploaded document.
 6. Review the answer and citations.
-7. Load the sample portfolio or enter holdings manually.
-8. Generate the portfolio risk summary.
+7. Load sample evaluation cases or enter custom JSON cases.
+8. Run the RAG evaluation harness and review pass/fail checks.
+9. Load the sample portfolio or enter holdings manually.
+10. Generate the portfolio risk summary.
 
 ## Testing Commands
 
@@ -207,7 +305,7 @@ Backend tests:
 
 ```bash
 cd backend
-.venv/bin/pytest
+.venv/bin/python -m pytest
 ```
 
 Frontend build:
@@ -224,6 +322,7 @@ npm run build
 - Document ingestion currently supports UTF-8 `.txt` files only.
 - The JSON vector store is intended for local development, not concurrent production use.
 - Answer generation is intentionally simple and does not call an LLM yet.
+- The evaluation harness uses deterministic phrase checks, not an LLM judge or production monitoring.
 - Portfolio risk summary is rule-based and only uses user-entered holdings.
 - The app does not connect to brokerage accounts, live market data, or real account data.
 - Authentication, authorization, deployment hardening, and encrypted document storage are not included.

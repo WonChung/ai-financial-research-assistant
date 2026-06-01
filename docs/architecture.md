@@ -10,10 +10,12 @@ The frontend is built with React, TypeScript, and Vite. It provides the user-fac
 - Upload a `.txt` research document.
 - Ask questions against the uploaded document.
 - Display source-cited answers.
+- Run RAG evaluation cases against the uploaded document.
+- Display evaluation pass/fail metrics, check details, latency, answers, and citations.
 - Enter portfolio holdings manually or load a sample portfolio.
 - Display portfolio concentration and sector-risk summaries.
 
-The frontend stores the latest uploaded `document_id` in component state. Every RAG question sends that `document_id` to the backend so answers are scoped to the selected document.
+The frontend stores the latest uploaded `document_id` in component state. Every RAG question and evaluation run sends that `document_id` to the backend so answers and evaluation checks are scoped to the selected document.
 
 ## FastAPI Backend
 
@@ -22,6 +24,7 @@ The backend is a Python FastAPI app. It exposes:
 - `GET /health`
 - `POST /documents/upload`
 - `POST /research/ask`
+- `POST /research/evaluate`
 - `POST /portfolio/risk-summary`
 
 Pydantic models define request and response shapes. Development data is stored locally under `backend/data/`.
@@ -71,6 +74,22 @@ The answer generator builds a concise answer from retrieved context and appends 
 
 This prototype does not call an LLM for answer generation yet. The current approach keeps local development deterministic and covered by tests.
 
+## RAG Evaluation Harness
+
+`POST /research/evaluate` runs golden-question evaluation cases against the same local `RagService` used by `POST /research/ask`.
+
+Evaluation fits after retrieval and answer generation:
+
+1. The request supplies a `document_id`, `top_k`, and a list of evaluation cases.
+2. Each case calls `RagService.answer()` with the case question.
+3. `RagService` performs document-scoped retrieval and deterministic source-cited answer generation.
+4. The evaluator checks the generated answer and cited context against expected phrases.
+5. The evaluator records citation count, latency, pass/fail checks, failure details, and a structured report.
+
+The harness is useful for regression testing source-grounded RAG behavior. For example, a golden question can assert that a revenue question still retrieves context mentioning online sales, includes expected answer phrases, and returns citations with source metadata.
+
+This is not a production evaluator. It does not call NVIDIA NeMo services, use an LLM-as-judge, monitor live traffic, or score nuanced semantic correctness. It is a deterministic local harness that aligns with the role-story pattern of evaluating RAG quality through repeatable cases, grounding checks, citation coverage, metrics, and reports.
+
 ## Source Citations
 
 Each answer includes citations with:
@@ -115,6 +134,20 @@ React UI
   -> JSON vector store
   -> document-scoped retrieval
   -> source-cited answer
+  -> React UI
+```
+
+RAG evaluation flow:
+
+```text
+React evaluation UI
+  -> FastAPI /research/evaluate
+  -> RagService
+  -> document-scoped retrieval
+  -> deterministic source-cited answer generation
+  -> evaluator phrase, grounding, and citation checks
+  -> latency and pass/fail metrics
+  -> structured report
   -> React UI
 ```
 

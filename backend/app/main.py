@@ -4,10 +4,11 @@ from uuid import uuid4
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.portfolio import Holding, summarize_portfolio_risk
 from app.rag.document_loader import DocumentValidationError
+from app.rag.evaluation import EvaluationCase, RagEvaluator
 from app.rag.pipeline import build_local_ingestion_service, build_local_rag_service
 
 
@@ -42,6 +43,43 @@ class CitationResponse(BaseModel):
 class AskResponse(BaseModel):
     answer: str
     citations: list[CitationResponse]
+
+
+class EvaluateCaseRequest(BaseModel):
+    question: str
+    expected_answer_phrases: list[str] = Field(default_factory=list)
+    expected_citation_phrases: list[str] = Field(default_factory=list)
+
+
+class EvaluateRequest(BaseModel):
+    document_id: str
+    top_k: int = 5
+    cases: list[EvaluateCaseRequest]
+
+
+class EvaluationCheckResponse(BaseModel):
+    name: str
+    passed: bool
+    detail: str | None
+
+
+class EvaluationCaseResultResponse(BaseModel):
+    question: str
+    answer: str
+    passed: bool
+    latency_ms: float
+    citation_count: int
+    checks: list[EvaluationCheckResponse]
+    citations: list[CitationResponse]
+
+
+class EvaluationResponse(BaseModel):
+    document_id: str
+    total_cases: int
+    passed_cases: int
+    failed_cases: int
+    pass_rate: float
+    results: list[EvaluationCaseResultResponse]
 
 
 class PortfolioHoldingRequest(BaseModel):
@@ -157,6 +195,80 @@ def ask_question(request: AskRequest) -> AskResponse:
                 end_char=citation.end_char,
             )
             for citation in generated_answer.citations
+        ],
+    )
+
+
+@app.post("/research/evaluate")
+def evaluate_research(request: EvaluateRequest) -> EvaluationResponse:
+    if not request.document_id.strip():
+        raise HTTPException(status_code=400, detail="document_id is required.")
+
+    if request.top_k <= 0:
+        raise HTTPException(status_code=400, detail="top_k must be greater than 0.")
+
+    if not request.cases:
+        raise HTTPException(status_code=400, detail="At least one case is required.")
+
+    if len(request.cases) > 20:
+        raise HTTPException(status_code=400, detail="A maximum of 20 cases is allowed.")
+
+    evaluation_cases: list[EvaluationCase] = []
+    for index, evaluation_case in enumerate(request.cases, start=1):
+        question = evaluation_case.question.strip()
+        if not question:
+            raise HTTPException(
+                status_code=400,
+                detail=f"case {index} question is required.",
+            )
+
+        evaluation_cases.append(
+            EvaluationCase(
+                document_id=request.document_id,
+                question=question,
+                expected_answer_phrases=evaluation_case.expected_answer_phrases,
+                expected_citation_phrases=evaluation_case.expected_citation_phrases,
+                top_k=request.top_k,
+            )
+        )
+
+    evaluator = RagEvaluator(build_local_rag_service(VECTOR_STORE_PATH))
+    summary = evaluator.evaluate(evaluation_cases)
+
+    return EvaluationResponse(
+        document_id=request.document_id,
+        total_cases=summary.total_cases,
+        passed_cases=summary.passed_cases,
+        failed_cases=summary.failed_cases,
+        pass_rate=summary.pass_rate,
+        results=[
+            EvaluationCaseResultResponse(
+                question=result.case.question,
+                answer=result.answer,
+                passed=result.passed,
+                latency_ms=result.latency_ms,
+                citation_count=result.cited_source_count,
+                checks=[
+                    EvaluationCheckResponse(
+                        name=check.name,
+                        passed=check.passed,
+                        detail=check.failure_reason,
+                    )
+                    for check in result.checks
+                ],
+                citations=[
+                    CitationResponse(
+                        source_id=citation.source_id,
+                        document_id=citation.document_id,
+                        filename=citation.filename,
+                        chunk_index=citation.chunk_index,
+                        start_char=citation.start_char,
+                        end_char=citation.end_char,
+                    )
+                    for citation in result.citations
+                ],
+            )
+            for result in summary.results
         ],
     )
 

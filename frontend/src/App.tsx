@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 type HealthState = "idle" | "checking" | "healthy" | "error";
 type UploadState = "idle" | "uploading" | "uploaded" | "error";
 type AskState = "idle" | "asking" | "answered" | "error";
+type EvaluationState = "idle" | "running" | "complete" | "error";
 type RiskState = "idle" | "summarizing" | "summarized" | "error";
 
 type UploadedDocument = {
@@ -25,6 +26,43 @@ type Citation = {
 type AskResponse = {
   answer: string;
   citations: Citation[];
+};
+
+type EvaluationCaseInput = {
+  question: string;
+  expected_answer_phrases?: string[];
+  expected_citation_phrases?: string[];
+};
+
+type EvaluationRequest = {
+  document_id: string;
+  top_k: number;
+  cases: EvaluationCaseInput[];
+};
+
+type EvaluationCheck = {
+  name: string;
+  passed: boolean;
+  detail: string | null;
+};
+
+type EvaluationCaseResult = {
+  question: string;
+  answer: string;
+  passed: boolean;
+  latency_ms: number;
+  citation_count: number;
+  checks: EvaluationCheck[];
+  citations: Citation[];
+};
+
+type EvaluationResponse = {
+  document_id: string;
+  total_cases: number;
+  passed_cases: number;
+  failed_cases: number;
+  pass_rate: number;
+  results: EvaluationCaseResult[];
 };
 
 type HoldingInput = {
@@ -101,6 +139,18 @@ const sampleHoldings: HoldingInput[] = [
   },
 ];
 
+const sampleEvaluationCases = JSON.stringify(
+  [
+    {
+      question: "Why did revenue increase?",
+      expected_answer_phrases: ["services"],
+      expected_citation_phrases: ["Revenue"],
+    },
+  ],
+  null,
+  2,
+);
+
 function App() {
   const [healthState, setHealthState] = useState<HealthState>("idle");
   const [message, setMessage] = useState("Backend health has not been checked.");
@@ -116,6 +166,14 @@ function App() {
     "Upload a document, then ask a question.",
   );
   const [askResponse, setAskResponse] = useState<AskResponse | null>(null);
+  const [evaluationCasesJson, setEvaluationCasesJson] = useState("");
+  const [evaluationState, setEvaluationState] =
+    useState<EvaluationState>("idle");
+  const [evaluationMessage, setEvaluationMessage] = useState(
+    "Upload a document to run evaluation cases.",
+  );
+  const [evaluationResponse, setEvaluationResponse] =
+    useState<EvaluationResponse | null>(null);
   const [holdings, setHoldings] = useState<HoldingInput[]>([emptyHolding(1)]);
   const [nextHoldingId, setNextHoldingId] = useState(2);
   const [riskState, setRiskState] = useState<RiskState>("idle");
@@ -190,11 +248,17 @@ function App() {
       setAskState("idle");
       setAskMessage("Ready for a question.");
       setAskResponse(null);
+      setEvaluationState("idle");
+      setEvaluationMessage("Ready to run evaluation cases.");
+      setEvaluationResponse(null);
     } catch (error) {
       setUploadedDocument(null);
       setDocumentId(null);
       setUploadState("error");
       setUploadMessage(error instanceof Error ? error.message : "Upload failed.");
+      setEvaluationState("idle");
+      setEvaluationMessage("Upload a document to run evaluation cases.");
+      setEvaluationResponse(null);
     }
   }
 
@@ -248,6 +312,81 @@ function App() {
     } catch (error) {
       setAskState("error");
       setAskMessage(error instanceof Error ? error.message : "Ask failed.");
+    }
+  }
+
+  function loadSampleEvaluationCases() {
+    setEvaluationCasesJson(sampleEvaluationCases);
+    setEvaluationState("idle");
+    setEvaluationMessage("Sample evaluation cases loaded.");
+    setEvaluationResponse(null);
+  }
+
+  async function runEvaluation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!documentId) {
+      setEvaluationState("error");
+      setEvaluationMessage("Upload a document before running evaluation.");
+      setEvaluationResponse(null);
+      return;
+    }
+
+    let parsedCases: unknown;
+    try {
+      parsedCases = JSON.parse(evaluationCasesJson);
+    } catch {
+      setEvaluationState("error");
+      setEvaluationMessage("Evaluation cases must be valid JSON.");
+      setEvaluationResponse(null);
+      return;
+    }
+
+    if (!Array.isArray(parsedCases)) {
+      setEvaluationState("error");
+      setEvaluationMessage("Evaluation cases JSON must be an array.");
+      setEvaluationResponse(null);
+      return;
+    }
+
+    const payload: EvaluationRequest = {
+      document_id: documentId,
+      top_k: 5,
+      cases: parsedCases as EvaluationCaseInput[],
+    };
+
+    setEvaluationState("running");
+    setEvaluationMessage("Running evaluation cases...");
+    setEvaluationResponse(null);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/research/evaluate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data.detail === "string"
+            ? data.detail
+            : `Evaluation failed with status ${response.status}`,
+        );
+      }
+
+      setEvaluationResponse(data as EvaluationResponse);
+      setEvaluationState("complete");
+      setEvaluationMessage("Evaluation complete.");
+    } catch (error) {
+      setEvaluationState("error");
+      setEvaluationMessage(
+        error instanceof Error ? error.message : "Evaluation failed.",
+      );
+      setEvaluationResponse(null);
     }
   }
 
@@ -418,6 +557,9 @@ function App() {
                 setAskState("idle");
                 setAskMessage("Upload a document, then ask a question.");
                 setAskResponse(null);
+                setEvaluationState("idle");
+                setEvaluationMessage("Upload a document to run evaluation cases.");
+                setEvaluationResponse(null);
               }}
             />
           </label>
@@ -504,6 +646,161 @@ function App() {
                 ) : (
                   <p className="empty-state">No citations returned.</p>
                 )}
+              </div>
+            </section>
+          ) : null}
+        </form>
+
+        <form
+          className="evaluation-panel"
+          onSubmit={runEvaluation}
+          aria-disabled={!documentId}
+        >
+          <div>
+            <h2>RAG Evaluation Harness</h2>
+            <p className={`status status-${evaluationState}`}>
+              {evaluationMessage}
+            </p>
+          </div>
+
+          <label className="json-input">
+            <span>Evaluation cases JSON</span>
+            <textarea
+              value={evaluationCasesJson}
+              onChange={(event) => {
+                setEvaluationCasesJson(event.target.value);
+                setEvaluationState("idle");
+                setEvaluationMessage(
+                  documentId
+                    ? "Ready to run evaluation cases."
+                    : "Upload a document to run evaluation cases.",
+                );
+                setEvaluationResponse(null);
+              }}
+              placeholder={sampleEvaluationCases}
+              rows={8}
+              disabled={!documentId || evaluationState === "running"}
+            />
+          </label>
+
+          <div className="form-actions">
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={loadSampleEvaluationCases}
+              disabled={!documentId || evaluationState === "running"}
+            >
+              Load Sample Eval Cases
+            </button>
+            <button
+              type="submit"
+              disabled={!documentId || evaluationState === "running"}
+            >
+              {evaluationState === "running" ? "Running..." : "Run Evaluation"}
+            </button>
+          </div>
+
+          {evaluationResponse ? (
+            <section className="evaluation-results" aria-live="polite">
+              <div className="evaluation-metrics">
+                <div>
+                  <span>Total Cases</span>
+                  <strong>{evaluationResponse.total_cases}</strong>
+                </div>
+                <div>
+                  <span>Passed</span>
+                  <strong>{evaluationResponse.passed_cases}</strong>
+                </div>
+                <div>
+                  <span>Failed</span>
+                  <strong>{evaluationResponse.failed_cases}</strong>
+                </div>
+                <div>
+                  <span>Pass Rate</span>
+                  <strong>
+                    {(evaluationResponse.pass_rate * 100).toFixed(0)}%
+                  </strong>
+                </div>
+              </div>
+
+              <div className="evaluation-case-list">
+                {evaluationResponse.results.map((result, index) => (
+                  <article
+                    className="evaluation-case-card"
+                    key={`${result.question}-${index}`}
+                  >
+                    <div className="evaluation-case-header">
+                      <h2>Case {index + 1}</h2>
+                      <span
+                        className={
+                          result.passed ? "result-pass" : "result-fail"
+                        }
+                      >
+                        {result.passed ? "Pass" : "Fail"}
+                      </span>
+                    </div>
+
+                    <p className="evaluation-question">{result.question}</p>
+
+                    <dl className="evaluation-case-metrics">
+                      <div>
+                        <dt>Latency</dt>
+                        <dd>{result.latency_ms.toFixed(1)} ms</dd>
+                      </div>
+                      <div>
+                        <dt>Citations</dt>
+                        <dd>{result.citation_count}</dd>
+                      </div>
+                    </dl>
+
+                    <div>
+                      <h2>Checks</h2>
+                      <ul className="check-list">
+                        {result.checks.map((check) => (
+                          <li
+                            className={check.passed ? "check-pass" : "check-fail"}
+                            key={check.name}
+                          >
+                            <span>{check.name}</span>
+                            <strong>{check.passed ? "Pass" : "Fail"}</strong>
+                            {check.detail ? <p>{check.detail}</p> : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h2>Answer</h2>
+                      <p className="answer-text">{result.answer}</p>
+                    </div>
+
+                    <div>
+                      <h2>Citations</h2>
+                      {result.citations.length > 0 ? (
+                        <ol className="citations">
+                          {result.citations.map((citation) => (
+                            <li
+                              key={`${citation.document_id}-${citation.chunk_index}`}
+                            >
+                              <span className="citation-title">
+                                [{citation.source_id}] {citation.filename}
+                              </span>
+                              <span>
+                                Chunk {citation.chunk_index}, characters{" "}
+                                {citation.start_char}-{citation.end_char}
+                              </span>
+                              <span className="citation-document">
+                                Document ID: {citation.document_id}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p className="empty-state">No citations returned.</p>
+                      )}
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
           ) : null}

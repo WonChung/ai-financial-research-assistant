@@ -92,6 +92,7 @@ h1 {
 .health-panel,
 .upload-panel,
 .ask-panel,
+.evaluation-panel,
 .portfolio-panel {
   align-items: center;
   background: #ffffff;
@@ -112,6 +113,7 @@ h1 {
 }
 
 .ask-panel,
+.evaluation-panel,
 .portfolio-panel {
   align-items: stretch;
   flex-direction: column;
@@ -143,6 +145,11 @@ h2 {
   font-weight: 700;
 }
 
+.status-complete {
+  color: #17634f;
+  font-weight: 700;
+}
+
 .status-summarized {
   color: #17634f;
   font-weight: 700;
@@ -154,28 +161,39 @@ h2 {
 }
 
 .file-input,
-.question-input {
+.question-input,
+.json-input {
   display: grid;
   gap: 8px;
 }
 
 .file-input span,
-.question-input span {
+.question-input span,
+.json-input span {
   color: #344054;
   font-size: 0.92rem;
   font-weight: 700;
 }
 
 .file-input input,
-.question-input textarea {
+.question-input textarea,
+.json-input textarea {
   border: 1px solid #cbd3df;
   border-radius: 6px;
   padding: 12px;
 }
 
-.question-input textarea:focus {
+.question-input textarea:focus,
+.json-input textarea:focus {
   border-color: #1b4d3e;
   outline: 3px solid rgb(27 77 62 / 14%);
+}
+
+.json-input textarea {
+  font-family:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.92rem;
+  line-height: 1.55;
 }
 
 .secondary-button {
@@ -276,6 +294,147 @@ h2 {
   padding-top: 18px;
 }
 
+.evaluation-results {
+  border-top: 1px solid #e5e9f0;
+  display: grid;
+  gap: 22px;
+  padding-top: 18px;
+}
+
+.evaluation-metrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.evaluation-metrics div {
+  background: #f7f8fa;
+  border: 1px solid #e5e9f0;
+  border-radius: 6px;
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+}
+
+.evaluation-metrics span,
+.evaluation-case-metrics dt {
+  color: #607089;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.evaluation-metrics strong,
+.evaluation-case-metrics dd {
+  color: #172033;
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.evaluation-case-list {
+  display: grid;
+  gap: 16px;
+}
+
+.evaluation-case-card {
+  background: #f7f8fa;
+  border: 1px solid #e5e9f0;
+  border-radius: 6px;
+  display: grid;
+  gap: 18px;
+  padding: 16px;
+}
+
+.evaluation-case-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.result-pass,
+.result-fail {
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 10px;
+  text-transform: uppercase;
+}
+
+.result-pass {
+  background: #e6f4ef;
+  color: #17634f;
+}
+
+.result-fail {
+  background: #fbecea;
+  color: #a33a2b;
+}
+
+.evaluation-question {
+  color: #344054;
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.evaluation-case-metrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.evaluation-case-metrics div {
+  display: grid;
+  gap: 4px;
+}
+
+.check-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.check-list li {
+  background: #ffffff;
+  border: 1px solid #e5e9f0;
+  border-radius: 6px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px;
+}
+
+.check-list span {
+  color: #172033;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.check-list strong {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.check-list p {
+  color: #536175;
+  grid-column: 1 / -1;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.check-pass strong {
+  color: #17634f;
+}
+
+.check-fail strong {
+  color: #a33a2b;
+}
+
 .answer-text {
   color: #172033;
   line-height: 1.6;
@@ -368,6 +527,7 @@ h2 {
   .health-panel,
   .upload-panel,
   .ask-panel,
+  .evaluation-panel,
   .portfolio-panel {
     align-items: stretch;
     flex-direction: column;
@@ -398,5 +558,15 @@ h2 {
 
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .evaluation-metrics,
+  .evaluation-case-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .evaluation-case-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

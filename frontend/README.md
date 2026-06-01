@@ -8,6 +8,8 @@ React + TypeScript + Vite frontend for the AI Financial Research Assistant.
 - `.txt` document upload.
 - Document-scoped Q&A against the latest uploaded document.
 - Source citation display for RAG answers.
+- RAG evaluation harness with editable JSON cases.
+- Evaluation pass/fail metrics, check details, latency, answers, and citations.
 - Manual portfolio holdings entry.
 - Portfolio risk summary display.
 
@@ -49,9 +51,12 @@ The frontend runs at the URL printed by Vite, usually `http://localhost:5173`.
 2. Upload a UTF-8 `.txt` document, such as `samples/example-financial-summary.txt`.
 3. Ask a question about the uploaded document.
 4. Review the answer and citations.
-5. Enter portfolio holdings manually or click `Load Sample Portfolio`.
-6. Click `Summarize Risk`.
-7. Review concentration notes, sector notes, warnings, and disclaimer.
+5. Load sample evaluation cases or enter custom JSON cases.
+6. Click `Run Evaluation`.
+7. Review pass/fail metrics, check details, latency, answers, and citations.
+8. Enter portfolio holdings manually or click `Load Sample Portfolio`.
+9. Click `Summarize Risk`.
+10. Review concentration notes, sector notes, warnings, and disclaimer.
 
 ## Checks
 

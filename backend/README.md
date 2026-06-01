@@ -1,6 +1,6 @@
 # Backend
 
-FastAPI backend for the AI Financial Research Assistant. It supports document upload, RAG-style document Q&A, source citations, and portfolio risk summary generation.
+FastAPI backend for the AI Financial Research Assistant. It supports document upload, RAG-style document Q&A, source citations, a deterministic RAG evaluation harness, and portfolio risk summary generation.
 
 ## Local Setup
 
@@ -98,6 +98,42 @@ curl -X POST http://127.0.0.1:8000/research/ask \
 
 The response includes an answer and citations with source IDs, filename, chunk index, and character offsets.
 
+### `POST /research/evaluate`
+
+Runs deterministic golden-question evaluation cases against one selected document.
+
+The request requires:
+
+- `document_id`
+- `top_k`
+- `cases`
+
+Each case includes:
+
+- `question`
+- `expected_answer_phrases`
+- `expected_citation_phrases`
+
+Example:
+
+```bash
+curl -X POST http://127.0.0.1:8000/research/evaluate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "document_id": "uuid-from-upload",
+    "top_k": 5,
+    "cases": [
+      {
+        "question": "Why did revenue increase?",
+        "expected_answer_phrases": ["online sales"],
+        "expected_citation_phrases": ["Management attributed the increase"]
+      }
+    ]
+  }'
+```
+
+The response includes aggregate pass/fail metrics and per-case results with answer text, latency, citation count, checks, failure details, and citations.
+
 ### `POST /portfolio/risk-summary`
 
 Generates a rule-based portfolio risk summary from manually supplied holdings.
@@ -122,10 +158,10 @@ The response includes concentration risk notes, largest positions, sector notes,
 
 ## RAG Status
 
-The current RAG path uses deterministic local hash embeddings for development and tests. It does not call an LLM yet.
+The current RAG path uses deterministic local hash embeddings for development and tests. It does not call an LLM yet. The evaluation harness checks repeatable retrieval, phrase, grounding, and citation behavior; it does not measure true semantic correctness with an LLM judge.
 
 ## Test
 
 ```bash
-.venv/bin/pytest
+.venv/bin/python -m pytest
 ```
