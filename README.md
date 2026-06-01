@@ -36,6 +36,14 @@ The goal is a portfolio-ready full-stack app: useful product behavior, clear arc
 
 ![Portfolio risk summary](docs/screenshots/portfolio-risk-summary.png)
 
+### RAG evaluation harness
+
+![RAG evaluation pass report](docs/screenshots/rag-evaluation-pass.png)
+
+### Evaluation failure detection
+
+![RAG evaluation failure report](docs/screenshots/rag-evaluation-fail.png)
+
 ## Tech Stack
 
 - Frontend: React, TypeScript, Vite
